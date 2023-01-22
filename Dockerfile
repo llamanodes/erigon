@@ -10,6 +10,7 @@ ADD go.sum go.sum
 RUN go mod download
 ADD . .
 
+ARG GOPROXY="https://proxy.golang.org,direct"
 RUN --mount=type=cache,target=/root/.cache \
     --mount=type=cache,target=/tmp/go-build \
     --mount=type=cache,target=/go/pkg/mod \
@@ -27,6 +28,7 @@ ADD go.sum go.sum
 
 RUN mkdir -p /app/build/bin
 
+ARG GOPROXY="https://proxy.golang.org,direct"
 RUN --mount=type=cache,target=/root/.cache \
     --mount=type=cache,target=/tmp/go-build \
     --mount=type=cache,target=/go/pkg/mod \

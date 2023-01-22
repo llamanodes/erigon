@@ -1,5 +1,8 @@
 # syntax = docker/dockerfile:1.2
-FROM docker.io/library/golang:1.20-alpine3.17 AS builder
+
+ARG GOLANG_TAG=1-alpine
+
+FROM docker.io/library/golang:$GOLANG_TAG AS builder
 
 RUN apk --no-cache add build-base linux-headers git bash ca-certificates libstdc++
 
@@ -12,13 +15,14 @@ ADD erigon-lib/go.sum erigon-lib/go.sum
 RUN go mod download
 ADD . .
 
+ARG GOPROXY="https://proxy.golang.org,direct"
 RUN --mount=type=cache,target=/root/.cache \
     --mount=type=cache,target=/tmp/go-build \
     --mount=type=cache,target=/go/pkg/mod \
-    make all
+    make -j$(nproc) all
 
 
-FROM docker.io/library/golang:1.20-alpine3.17 AS tools-builder
+FROM docker.io/library/golang:$GOLANG_TAG AS tools-builder
 RUN apk --no-cache add build-base linux-headers git bash ca-certificates libstdc++
 WORKDIR /app
 
@@ -31,10 +35,11 @@ ADD erigon-lib/go.sum erigon-lib/go.sum
 
 RUN mkdir -p /app/build/bin
 
+ARG GOPROXY="https://proxy.golang.org,direct"
 RUN --mount=type=cache,target=/root/.cache \
     --mount=type=cache,target=/tmp/go-build \
     --mount=type=cache,target=/go/pkg/mod \
-    make db-tools
+    make -j$(nproc) db-tools
 
 FROM docker.io/library/alpine:3.17
 
@@ -83,28 +88,28 @@ COPY --from=builder /app/build/bin/caplin-regression /usr/local/bin/caplin-regre
 
 
 EXPOSE 8545 \
-       8551 \
-       8546 \
-       30303 \
-       30303/udp \
-       42069 \
-       42069/udp \
-       8080 \
-       9090 \
-       6060
+    8551 \
+    8546 \
+    30303 \
+    30303/udp \
+    42069 \
+    42069/udp \
+    8080 \
+    9090 \
+    6060
 
 # https://github.com/opencontainers/image-spec/blob/main/annotations.md
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION
 LABEL org.label-schema.build-date=$BUILD_DATE \
-      org.label-schema.description="Erigon Ethereum Client" \
-      org.label-schema.name="Erigon" \
-      org.label-schema.schema-version="1.0" \
-      org.label-schema.url="https://torquem.ch" \
-      org.label-schema.vcs-ref=$VCS_REF \
-      org.label-schema.vcs-url="https://github.com/ledgerwatch/erigon.git" \
-      org.label-schema.vendor="Torquem" \
-      org.label-schema.version=$VERSION
+    org.label-schema.description="Erigon Ethereum Client" \
+    org.label-schema.name="Erigon" \
+    org.label-schema.schema-version="1.0" \
+    org.label-schema.url="https://torquem.ch" \
+    org.label-schema.vcs-ref=$VCS_REF \
+    org.label-schema.vcs-url="https://github.com/ledgerwatch/erigon.git" \
+    org.label-schema.vendor="Torquem" \
+    org.label-schema.version=$VERSION
 
 ENTRYPOINT ["erigon"]

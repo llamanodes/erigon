@@ -33,7 +33,8 @@ pipeline {
                                 error(err)
                             }
                             amd_image.push()
-                            amd_image.push('latest_amd3')
+                            amd_image.push('latest')
+                            amd_image.push('latest_amd64')
                         }
                     }
                 }
@@ -52,26 +53,7 @@ pipeline {
                                 error(err)
                             }
                             arm_image.push()
-                            arm_image.push('latest_graviton2')
-                        }
-                    }
-                }
-                stage('Build and push intel image') {
-                    agent {
-                        label 'intel_jenkins_agent'
-                    }
-                    steps {
-                        script {
-                            DOCKER_GIT_TAG_INTEL="$DOCKER_GIT_TAG" + "_intel_sky_lake"
-                            restoreMTime()
-                            try {
-                                intel_image = docker.build("$DOCKER_GIT_TAG_INTEL")
-                            } catch (e) {
-                                def err = "intel_sky_lake build failed: ${e}"
-                                error(err)
-                            }
-                            intel_image.push()
-                            intel_image.push('latest')
+                            arm_image.push('latest_arm64')
                         }
                     }
                 }

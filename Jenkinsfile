@@ -4,7 +4,7 @@ def intel_image
 def restoreMTime() {
     sh '''
         git restore-mtime
-        touch -t $(git show -s --date=format:'%Y%m%d%H%M.%S' --format=%cd HEAD) .git
+        touch -t "$(git show -s --date=format:'%Y%m%d%H%M.%S' --format=%cd HEAD)" .git
     '''
 }
 
@@ -12,48 +12,84 @@ def restoreMTime() {
 pipeline {
     agent any
     environment {
-        DOCKER_GIT_TAG="$AWS_ECR_URL/erigon:${GIT_COMMIT.substring(0,8)}"
         DOCKER_BUILDKIT=1
+        DOCKER_REPO="${AWS_ECR_URL}/erigon"
+        DOCKER_REPO_TAG_GIT="${DOCKER_REPO}:${GIT_COMMIT.substring(0,8)}"
+        DOCKER_REPO_TAG_LATEST="${DOCKER_REPO}:latest"
+        PRODUCTION_BRANCH="stable"
     }
     stages {
         stage('build and push') {
             parallel {
-                stage('Build and push amd64 image') {
+                stage('build and push amd64 image') {
                     agent {
-                        label 'amd64_epyc2'
+                        label 'amd64'
                     }
                     steps {
                         script {
-                            DOCKER_GIT_TAG_AMD="$DOCKER_GIT_TAG" + "_amd64"
+                            ARCH="amd64"
+
                             restoreMTime()
+                            DOCKER_REPO_TAG_LATEST_ARCH="${DOCKER_REPO_TAG_LATEST}_${ARCH}"
+                            DOCKER_REPO_TAG_GIT_ARCH="${DOCKER_REPO_TAG_GIT}_${ARCH}"
                             try {
-                                amd_image = docker.build("$DOCKER_GIT_TAG_AMD")
+                                docker.pull("$DOCKER_REPO_TAG_LATEST_ARCH")
                             } catch (e) {
-                                def err = "amd64 build failed: ${e}"
+                                echo "fallible ${ARCH} pull failed: ${e}"
+                            }
+                            try {
+                                amd_image = docker.build("${DOCKER_REPO_TAG_GIT_ARCH}", "--cache-from=${DOCKER_REPO_TAG_LATEST_ARCH} .")
+                            } catch (e) {
+                                def err = "${ARCH} build failed: ${e}"
                                 error(err)
                             }
                             amd_image.push()
-                            amd_image.push('latest')
-                            amd_image.push('latest_amd64')
+                            if (env.BRANCH_NAME == "$PRODUCTION_BRANCH") {
+                                amd_image.push("${DOCKER_REPO_TAG_LATEST_ARCH}")
+                            }
                         }
                     }
                 }
                 stage('Build and push arm64 image') {
                     agent {
-                        label 'arm64_graviton2'
+                        label 'arm64'
                     }
                     steps {
                         script {
-                            DOCKER_GIT_TAG_ARM="$DOCKER_GIT_TAG" + "_arm64"
+                            ARCH="arm64"
+
                             restoreMTime()
+                            DOCKER_REPO_TAG_LATEST_ARCH="${DOCKER_REPO_TAG_LATEST}_${ARCH}"
+                            DOCKER_REPO_TAG_GIT_ARCH="${DOCKER_REPO_TAG_GIT}_${ARCH}"
                             try {
-                                arm_image = docker.build("$DOCKER_GIT_TAG_ARM")
+                                docker.pull("$DOCKER_REPO_TAG_LATEST_ARCH")
                             } catch (e) {
-                                def err = "arm64 build failed: ${e}"
+                                echo "fallible ${ARCH} pull failed: ${e}"
+                            }
+                            try {
+                                arm_image = docker.build("${DOCKER_REPO_TAG_GIT_ARCH}", "--cache-from=${DOCKER_REPO_TAG_LATEST_ARCH} .")
+                            } catch (e) {
+                                def err = "${ARCH} build failed: ${e}"
                                 error(err)
                             }
                             arm_image.push()
-                            arm_image.push('latest_arm64')
+                            if (env.BRANCH_NAME == "$PRODUCTION_BRANCH") {
+                                arm_image.push("${DOCKER_REPO_TAG_LATEST_ARCH}")
+                            }
+                        }
+                    }
+                }
+                stage('Build (experimental) manifest') {
+                    agent {
+                        label 'amd64'
+                    }
+                    steps {
+                        script {
+                            sh 'docker manifest create ${DOCKER_REPO_TAG_GIT}_amd64 ${DOCKER_REPO_TAG_GIT}_arm64 ${DOCKER_REPO_TAG_GIT}'
+                            if (env.BRANCH_NAME == "$PRODUCTION_BRANCH") {
+                                sh 'docker manifest create ${DOCKER_REPO_TAG_LATEST}_amd64 ${DOCKER_REPO_TAG_LATEST}_arm64 ${DOCKER_REPO_TAG_LATEST}'
+                            }
+
                         }
                     }
                 }

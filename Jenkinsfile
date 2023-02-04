@@ -16,7 +16,7 @@ pipeline {
         DOCKER_REPO="${AWS_ECR_URL}/erigon"
         DOCKER_REPO_TAG_GIT="${DOCKER_REPO}:${GIT_COMMIT.substring(0,8)}"
         DOCKER_REPO_TAG_LATEST="${DOCKER_REPO}:latest"
-        PRODUCTION_BRANCH="stable"
+        LATEST_BRANCH="stable"
     }
     stages {
         stage('build and push') {
@@ -44,7 +44,7 @@ pipeline {
                                 error(err)
                             }
                             amd_image.push()
-                            if (env.BRANCH_NAME == "$PRODUCTION_BRANCH") {
+                            if (env.BRANCH_NAME == "$LATEST_BRANCH") {
                                 amd_image.push("${DOCKER_REPO_TAG_LATEST_ARCH}")
                             }
                         }
@@ -73,7 +73,7 @@ pipeline {
                                 error(err)
                             }
                             arm_image.push()
-                            if (env.BRANCH_NAME == "$PRODUCTION_BRANCH") {
+                            if (env.BRANCH_NAME == "$LATEST_BRANCH") {
                                 arm_image.push("${DOCKER_REPO_TAG_LATEST_ARCH}")
                             }
                         }
@@ -86,7 +86,7 @@ pipeline {
                     steps {
                         script {
                             sh 'docker manifest create ${DOCKER_REPO_TAG_GIT}_amd64 ${DOCKER_REPO_TAG_GIT}_arm64 ${DOCKER_REPO_TAG_GIT}'
-                            if (env.BRANCH_NAME == "$PRODUCTION_BRANCH") {
+                            if (env.BRANCH_NAME == "$LATEST_BRANCH") {
                                 sh 'docker manifest create ${DOCKER_REPO_TAG_LATEST}_amd64 ${DOCKER_REPO_TAG_LATEST}_arm64 ${DOCKER_REPO_TAG_LATEST}'
                             }
 

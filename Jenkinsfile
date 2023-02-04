@@ -20,7 +20,7 @@ pipeline {
             parallel {
                 stage('Build and push amd64 image') {
                     agent {
-                        label 'amd64_jenkins_agent'
+                        label 'amd64_epyc2'
                     }
                     steps {
                         script {
@@ -40,7 +40,7 @@ pipeline {
                 }
                 stage('Build and push arm64 image') {
                     agent {
-                        label 'arm64_jenkins_agent'
+                        label 'arm64_graviton2'
                     }
                     steps {
                         script {

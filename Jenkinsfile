@@ -108,8 +108,10 @@ pipeline {
                     environment {
                         ARCH="amd64"
                     }
-                    script {
-                        maybePushLatest()
+                    steps {
+                        script {
+                            maybePushLatest()
+                        }
                     }
                 }
             }

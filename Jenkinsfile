@@ -85,19 +85,6 @@ pipeline {
                         }
                     }
                 }
-                stage('Build and push arm64 image') {
-                    agent {
-                        label 'arm64'
-                    }
-                    environment {
-                        ARCH="arm64"
-                    }
-                    steps {
-                        script {
-                            buildAndPush()
-                        }
-                    }
-                }
             }
 
         }

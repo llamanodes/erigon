@@ -35,6 +35,19 @@ pipeline {
                         }
                     }
                 }
+                stage('build and push arm64 image') {
+                    agent {
+                        label 'arm64'
+                    }
+                    environment {
+                        ARCH="arm64"
+                    }
+                    steps {
+                        script {
+                            buildAndPush()
+                        }
+                    }
+                }
             }
 
         }
@@ -44,6 +57,17 @@ pipeline {
                     agent any
                     environment {
                         ARCH="amd64"
+                    }
+                    steps {
+                        script {
+                            maybePushLatest()
+                        }
+                    }
+                }
+                stage('maybe push latest_arm64 tag') {
+                    agent any
+                    environment {
+                        ARCH="arm64"
                     }
                     steps {
                         script {

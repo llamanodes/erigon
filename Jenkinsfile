@@ -31,7 +31,7 @@ pipeline {
                     }
                     steps {
                         script {
-                            buildAndPush()
+                            myBuildandPush.buildAndPush()
                         }
                     }
                 }
@@ -44,7 +44,7 @@ pipeline {
                     }
                     steps {
                         script {
-                            buildAndPush()
+                            myBuildandPush.buildAndPush()
                         }
                     }
                 }
@@ -60,7 +60,7 @@ pipeline {
                     }
                     steps {
                         script {
-                            maybePushLatest()
+                            myPushLatest.maybePushLatest()
                         }
                     }
                 }
@@ -71,7 +71,7 @@ pipeline {
                     }
                     steps {
                         script {
-                            maybePushLatest()
+                            myPushLatest.maybePushLatest()
                         }
                     }
                 }

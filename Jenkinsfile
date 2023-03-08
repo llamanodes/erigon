@@ -77,35 +77,5 @@ pipeline {
                 }
             }
         }
-        stage('create (experimental) manifest') {
-            agent any
-            steps {
-                script {
-                    sh '''#!/bin/bash
-                        set -eux -o pipefail
-
-                        [ -n "$BRANCH_NAME" ]
-                        [ -n "$GIT_SHORT" ]
-                        [ -n "$LATEST_BRANCH" ]
-                        [ -n "$REGISTRY" ]
-
-                        function manifest {
-                            repo=$1
-
-                            docker manifest create "${repo}" --amend "${repo}_amd64" --amend "${repo}_arm64"
-
-                            docker manifest push --purge "${repo}"
-                        }
-
-                        manifest "${REGISTRY}:git_${GIT_SHORT}"
-                        manifest "${REGISTRY}:branch_${BRANCH_NAME}"
-
-                        if [ "${BRANCH_NAME}" = "${LATEST_BRANCH}" ]; then
-                            manifest "${REGISTRY}:latest"
-                        fi
-                    '''
-                }
-            }
-        }
     }
 }
